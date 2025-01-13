@@ -14,35 +14,64 @@ from reportlab.lib.pagesizes import landscape, A3
 from reportlab.lib.utils import ImageReader
 import os
 
+def load_logos():
+    logos_folder = os.path.join(os.getcwd(), "logos")
+    if not os.path.exists(logos_folder):
+        os.makedirs(logos_folder)  # Create the folder if it doesn't exist
+    return [f for f in os.listdir(logos_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+def refresh_logos():
+    logos = load_logos()
+    logo_selector['values'] = logos
+    if logos:
+        logo_selector.set(logos[0])  # Set the first logo as default
+    else:
+        logo_selector.set("No logos found")
+
+
 def select_pdf_directory():
     folder_path = filedialog.askdirectory()
     pdf_directory_entry.delete(0, tk.END)
     pdf_directory_entry.insert(0, folder_path)
 
+from decimal import Decimal
+
 def create_watermark_pdf(watermark_image_path, watermark_pdf_path, page_width, page_height, positions):
+    # Ensure dimensions are floats
+    page_width = float(page_width) if isinstance(page_width, (Decimal, float)) else page_width
+    page_height = float(page_height) if isinstance(page_height, (Decimal, float)) else page_height
+
     c = canvas.Canvas(watermark_pdf_path, pagesize=(page_width, page_height))
     img = ImageReader(watermark_image_path)
-    img_width, img_height = img.getSize()
+    img_width, img_height = map(float, img.getSize())  # Convert image dimensions to float
     c.setFillAlpha(0.3)  # Set transparency level
 
     # Calculate positions
-    if 'top_left' in positions:
-        c.drawImage(img, 0, page_height - img_height, width=img_width, height=img_height, mask='auto')
-    if 'top_right' in positions:
-        c.drawImage(img, page_width - img_width, page_height - img_height, width=img_width, height=img_height, mask='auto')
-    if 'bottom_left' in positions:
-        c.drawImage(img, 0, 0, width=img_width, height=img_height, mask='auto')
-    if 'bottom_right' in positions:
-        c.drawImage(img, page_width - img_width, 0, width=img_width, height=img_height, mask='auto')
+    for position in positions:
+        if position == 'top_left':
+            c.drawImage(img, 0, page_height - img_height, width=img_width, height=img_height, mask='auto')
+        elif position == 'top_right':
+            c.drawImage(img, page_width - img_width, page_height - img_height, width=img_width, height=img_height, mask='auto')
+        elif position == 'bottom_left':
+            c.drawImage(img, 0, 0, width=img_width, height=img_height, mask='auto')
+        elif position == 'bottom_right':
+            c.drawImage(img, page_width - img_width, 0, width=img_width, height=img_height, mask='auto')
 
     c.save()
 
+
+
 def watermark_pdfs():
     pdf_directory = pdf_directory_entry.get()
-    watermark_image_path = "logo.png"  # Predefined watermark image path
+    selected_logo = logo_selector.get()
+    watermark_image_path = os.path.join(os.getcwd(), "logos", selected_logo)
 
     if not pdf_directory:
         messagebox.showerror("Error", "Please select a PDF directory")
+        return
+
+    if not selected_logo:
+        messagebox.showerror("Error", "Please select a logo for watermarking")
         return
 
     positions = []
@@ -105,10 +134,18 @@ def watermark_pdfs():
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred: {e}")
 
+
 # Create the main application window
 root = tk.Tk()
 root.title("PDF Watermarking Tool")
 root.geometry("500x500")
+
+# Add Logo Selection Section
+tk.Label(root, text="Select logo for watermarking:").pack(pady=5)
+logo_selector = ttk.Combobox(root, state="readonly", width=50)
+logo_selector.pack(pady=5)
+refresh_logos()
+tk.Button(root, text="Refresh Logos", command=refresh_logos).pack(pady=5)
 
 # Input PDF directory selection
 tk.Label(root, text="Select PDF directory:").pack(pady=5)

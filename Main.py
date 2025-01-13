@@ -10,7 +10,6 @@ from tkinter import filedialog, messagebox
 from tkinter import ttk
 from PyPDF2 import PdfReader, PdfWriter, PageObject
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import landscape, A3
 from reportlab.lib.utils import ImageReader
 import os
 

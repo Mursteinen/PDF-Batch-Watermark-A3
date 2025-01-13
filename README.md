@@ -1,3 +1,6 @@
-The UI
+Put your logos in /logos folder
 
-![image](https://github.com/user-attachments/assets/51d5ecc8-9e83-4d8a-8504-fbe424a4f765)
+
+The UI
+![image](https://github.com/user-attachments/assets/76996478-263c-4434-9965-a7a793e478dd)
+

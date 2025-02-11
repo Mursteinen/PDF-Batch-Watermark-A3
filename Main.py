@@ -11,6 +11,8 @@ from PyPDF2 import PdfReader, PdfWriter, PageObject
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import os
+from decimal import Decimal
+import subprocess
 
 # Load logos dynamically
 def load_logos():
@@ -32,8 +34,20 @@ def select_pdf_directory():
     pdf_directory_entry.delete(0, tk.END)
     pdf_directory_entry.insert(0, folder_path)
 
+def open_directory(path):
+    if os.path.exists(path):
+        if os.name == 'nt':  # For Windows
+            os.startfile(path)
+        elif os.name == 'posix':  # For MacOS and Linux
+            subprocess.Popen(['open' if sys.platform == 'darwin' else 'xdg-open', path])
+    else:
+        messagebox.showerror("Error", f"Directory does not exist: {path}")
+
 # Create watermark on a blank PDF page
 def create_watermark_pdf(watermark_image_path, watermark_pdf_path, page_width, page_height, positions):
+    page_width = float(page_width) if isinstance(page_width, Decimal) else page_width
+    page_height = float(page_height) if isinstance(page_height, Decimal) else page_height
+
     c = canvas.Canvas(watermark_pdf_path, pagesize=(page_width, page_height))
     img = ImageReader(watermark_image_path)
     img_width, img_height = map(float, img.getSize())
@@ -82,7 +96,9 @@ def watermark_pdfs():
                 pdf_writer = PdfWriter()
 
                 for page_num, page in enumerate(input_pdf.pages):
-                    page_width, page_height = page.mediabox.width, page.mediabox.height
+                    page_width = float(page.mediabox.width) if isinstance(page.mediabox.width, Decimal) else page.mediabox.width
+                    page_height = float(page.mediabox.height) if isinstance(page.mediabox.height, Decimal) else page.mediabox.height
+
                     watermark_pdf_path = f"temp_watermark_{page_num}.pdf"
                     create_watermark_pdf(watermark_image_path, watermark_pdf_path, page_width, page_height, positions)
 
@@ -106,7 +122,7 @@ def watermark_pdfs():
 # GUI Layout
 root = tk.Tk()
 root.title("PDF Watermarking Tool")
-root.geometry("600x700")
+root.geometry("600x750")
 
 style = ttk.Style()
 style.configure('TButton', font=('Arial', 10), padding=6)
@@ -124,6 +140,10 @@ tk.Label(root, text="Select PDF Directory:").pack(pady=5)
 pdf_directory_entry = tk.Entry(root, width=50)
 pdf_directory_entry.pack(pady=5)
 tk.Button(root, text="Browse", command=select_pdf_directory).pack(pady=5)
+
+# Buttons to open directories
+tk.Button(root, text="Open Selected PDF Directory", command=lambda: open_directory(pdf_directory_entry.get())).pack(pady=5)
+tk.Button(root, text="Open Watermarked Directory", command=lambda: open_directory(os.path.join(pdf_directory_entry.get(), "watermarked"))).pack(pady=5)
 
 # Watermark Positions Grid
 tk.Label(root, text="Select Watermark Positions:").pack(pady=5)
